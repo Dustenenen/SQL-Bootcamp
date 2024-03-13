@@ -267,7 +267,7 @@ select count(distinct(c1)) from t1
 -- we're calling count on the result of distinct name
 ```
 
-## 3.4. WHERE Clause
+## 3.4. WHERE Clause 
 
 The `where` clause is used to filter records. It is used to extract only those records that fulfill a specified condition.
 
@@ -756,80 +756,29 @@ group by customer_id
 We want to find out the top 5 customers that spent the most money:
 
 ```sql
-select customer_id, sum(amount)
-from payment
--- where
-group by customer_id
-order by sum(amount) desc
+SELECT customer_id, round(sum(amount),2)
+FROM payment
+GROUP BY customer_id
+ORDER BY sum(amount)desc
 limit 5
-```
-
-Alternative: 
-
-```sql
-with top_customer as (
-    select
-        customer_id,
-        sum(amount) as s_amount
-    from
-        payment -- where 
-    group by
-        customer_id -- having
-    order by
-        sum(amount) desc
-    limit
-        5
-)
-select
-    t.customer_id,
-    first_name,
-    last_name,
-    s_amount
-from
-    top_customer as t
-    join customer as c on t.customer_id = c.customer_id
 ```
 
 We want to find out how many transaction occurred per customer:
 
 ```sql
-select customer_id, count(amount) from payment
-group by customer_id
-order by count(amount) desc
-```
-
-Alternative
-
-```sql 
-with tx_count as (
-    select
-        customer_id,
-        count(payment_id) as tx_count
-    from
-        payment
-    group by
-        customer_id
-)
-select
-    t.customer_id,
-    first_name,
-    last_name,
-    tx_count
-from
-    tx_count as t
-    join customer as c on t.customer_id = c.customer_id
-order by
-    tx_count desc
-limit
-    5
+SELECT customer_id, count(amount)
+FROM payment
+GROUP BY customer_id
+ORDER BY count(amount) DESC
 ```
 
 We want to find out the sum amount per customer per staff member:
 
 ```sql
-select staff_id, customer_id, sum(amount) from payment
-group by staff_id, customer_id
-order by staff_id, customer_id
+SELECT staff_id, customer_id, sum(amount)
+FROM payment
+GROUP BY staff_id, customer_id
+ORDER BY staff_id, customer_id
 ```
 
 We want to find out the date with the most sum amount:
@@ -853,13 +802,6 @@ order by sum(amount) desc
 ```
 
 **Challenge**: We have two staff members, with Staff IDs 1 and 2. We want to give a bonus to the staff member that handled the most payments. (Most in terms of number of payments processed, not total dollar amount). How many payments did each staff member handle and who gets the bonus?
-
-```sql
-select staff_id, count(payment_id) from payment
-group by staff_id
-```
-
-Alternative solution:
 
 ```sql
 --It grouped and ordered the payment id + desc
@@ -892,32 +834,6 @@ FROM payment
 GROUP BY customer_id
 ORDER BY sum(amount)desc
 limit 5
-```
-
-Alternative: 
-
-```sql
-with c_sum as (
-    select
-        customer_id,
-        sum(amount)
-    from
-        payment
-    group by
-        customer_id
-    limit
-        5
-)
-select
-    c.customer_id,
-    first_name,
-    last_name,
-    sum
-from
-    c_sum as c
-    join customer as u on c.customer_id = u.customer_id
-order by
-    sum desc
 ```
 
 ## 5.3. HAVING Clause
@@ -1021,20 +937,6 @@ FROM customer
 WHERE first_name like 'E%' and address_id < 500
 ORDER BY customer_id desc
 ```
-
-Wrong answer:
-
-```sql
-select max(customer_id), first_name, last_name
-from customer
-where first_name ilike 'E%'
-	and address_id < 5000
--- group by
--- having
--- order by
--- limit
-```
-
 
 # 7. JOIN Clause
 
@@ -1342,15 +1244,6 @@ WHERE address.district = 'California'
 -- this query returns the same information if we perform an inner join; we perform a right join to make sure that there is no person in California that does not have an email in the database
 ```
 
-Alternative:
-
-```sql
-select a.district, c.email
-from address as a join customer as c on a.address_id = c.address_id
-where a.district ilike 'california'
-order by c.email asc
-```
-
 **Challenge**: A customer walks in and is a huge fan of the actor "Nick Wahlberg" and wants to know which movies he is in. Get a list of all the movies "Nick Wahlberg" has been in.
 
 ```sql
@@ -1365,23 +1258,6 @@ ON actor.actor_id = film_actor.actor_id
 JOIN film
 ON film.film_id = film_actor.film_id
 WHERE actor.first_name = 'Nick' and actor.last_name = 'Wahlberg''
-```
-
-Alternative:
-
-```sql
-select
-	f.title, a.first_name, a.last_name
-from film_actor as fa
-	join actor as a on fa.actor_id = a.actor_id
-	join film as f on f.film_id = fa.film_id
-where
-	a.first_name ilike 'nick' and
-	a.last_name ilike 'wahlberg'
--- group by
--- having
-order by f.title asc
--- limit
 ```
 
 # 8. Advanced SQL Commands
@@ -1509,31 +1385,6 @@ Challenge: During which months did payments occur? Format your answer to return 
 the full month name
 ```
 
-Alternative:
-
-```sql
-select distinct(to_char(payment_date, 'Month'))
-from payment
-```
-
-Alternative (ordering the month chronologically):
-
-```sql
--- task: during which month did payments occur?
-
-select distinct(extract(month from payment_date)) as "num_month", to_char(payment_date, 'Month')
-from payment
-order by "num_month"
-```
-
-Alternative (without the alias):
-
-```sql
-select distinct(extract(month from payment_date)), to_char(payment_date, 'Month')
-from payment
-order by date_part
-```
-
 **Challenge**: How many payments occurred on a Monday?
 
 ```sql
@@ -1554,14 +1405,6 @@ where extract(dow from payment_date) = 1
 group by date_part
 
 -- for dow sunday (0) -> monday (1)
-```
-
-Alternative (more compact):
-
-```sql
-select count(*)
-from payment
-where extract(dow from payment_date) = 1
 ```
 
 ## 8.2. Mathematical Functions and Operators
@@ -1930,14 +1773,6 @@ FROM cd.members
 WHERE joindate:: date >= '2012-09-01'
 ```
 
-Alternative:
-
-```sql
-select *
-from cd.member
-where join_date::date >= '2012-09-01'
-```
-
 How can you produce an ordered list of the first 10 surnames in the members table? The list must not contain duplicates.
 
 ```sql
@@ -1956,41 +1791,6 @@ You'd like to get the signup date of your last member. How can you retrieve this
 Solution:
 SELECT max(joindate)
 from cd.members
-```
-
-Alternative 1:
-
-```sql
-select first_name, last_name, join_date
-from cd.member
-order by join_date desc
-limit 1
--- order and limit
-```
-
-Alternative 2:
-
-```sql
-select first_name, last_name, join_date
-from cd.member
-where join_date in (
- select max(join_date)
- from cd.member
-)
--- where ... in clause; condition is single value
-```
-
-Alternative 3:
-
-```sql
-select first_name, last_name, join_date
-from cd.member as m_left
-join (
- select max(join_date) as max_join_date
- from cd.member
-) as m_right
-on m_left.join_date = m_right.max_join_date
--- inner join on single value
 ```
 
 Produce a count of the number of facilities that have a cost to guests of 10 or more.
@@ -2042,18 +1842,6 @@ FROM cd.bookings
 INNER JOIN cd.facilities ON cd.facilities.facid = cd.bookings.facid
 WHERE name LIKE '%Tennis Court%' AND starttime:: time >= '2012-09-21 00:00:00'
 ORDER BY starttime;
-```
-
-Alternative:
-
-```sql
-select start_time, f.name
-from cd.booking as b
-join cd.facility as f on b.fac_id = f.fac_id
-where
-  start_time between '2012-09-21' and '2012-09-22'
-  and f.name ilike '%tennis%court%'
-order by start_time
 ```
 
 How can you produce a list of the start times for bookings by members named 'David Farrell'?
@@ -3603,27 +3391,19 @@ select * from employee;
 Solution:
 
 ```sql
-with max_salary as (
-	select dept_name, max(salary)
-	from employee
-	group by dept_name
-), min_salary as (
-	select dept_name, min(salary)
-	from employee
-	group by dept_name
-)
+WITH Max(salary) AS (
+SELECT DISTINCT dept_name, max(salary)
+FROM employee
+GROUP BY dept_name
 
-select
-	e.emp_id, e.emp_name, e.dept_name, e.salary,
-	case
-		when e.salary = mas.max then 'Highest Salary'
-		else 'Lowest Salary'
-	end as description
-from employee e, max_salary mas, min_salary mis
-where
-	e.dept_name = mas.dept_name and e.salary = mas.max or
-	e.dept_name = mis.dept_name and e.salary = mis.min
-order by e.dept_name, salary desc
+), min_salary AS (
+SELECT DISTINCT dept_name, min(salary)
+FROM employee
+GROUP BY dept_name
+)
+SELECT emp_id, emp_name, dept_name, salary	
+FROM employee
+ORDER BY dept_name, salary DESC;
 ```
 
 ## 18.4. Exercise 4
@@ -3658,8 +3438,11 @@ insert into doctors values
 Solution:
 
 ```sql
-select d1.id, d1.name, d1.speciality, d1.hospital, d1.city, d1.consultation_fee
-from doctors d1 join doctors d2 on d1.hospital = d2.hospital and d1.speciality != d2.speciality
+SELECT c1.name, c1.speciality, c1.hospital
+FROM doctors c1
+JOIN doctors c2
+ON c1.hospital = c2.hospital and c1.speciality <> c2.speciality
+AND c1.id <> c2.id;
 ```
 
 ## 18.5. Exercise 5
@@ -3697,118 +3480,15 @@ insert into login_details values
 Solution:
 
 ```sql
-with l as (
-	select *, lag(user_name) over w as prev_user1, lag(user_name,2) over w as prev_user2
-	from login_details
-	window w as (order by login_date, login_id)
-)
-
-select *
-from l
-where user_name = prev_user1 and prev_user1 = prev_user2
-```
-
-Alternative solution:
-
-```sql
-with rep as (
-	select
-		*,
-		case
-			when lag(user_name) over (order by login_date) = user_name then 'repeat'
-			else 'not repeat'
-		end as rep
-	from login_details
-), cume_rep as (
-	select
-		*,
-		case
-			when rep = 'repeat' and lag(rep) over (order by login_date) = rep then 1
-			else 0
-		end as cume_rep
-	from rep
-)
-
-select *
-from cume_rep
-where cume_rep = 1
-```
-
-Better alternative solution. This solution also counts the number of consecutive logins by the user.
-
-```sql
-with rep as (
-	select
-		*,
-		case
-			when lag(user_name) over(order by login_date) = user_name then 1
-			else 0
-		end as rep
-	from login_details
-), island_head as (
-	select
-		*,
-		case
-			when
-				rep = 0 and lead(rep) over(order by login_date) = 1 then login_id
-		end as island_head
-	from rep
-), island_id as(
-	select
-		*,
-		case
-			when rep = 1 then max(island_head) over(order by login_date)
-			when rep = 0 then island_head
-		end as island_id
-	from island_head
-)
-
-select
-	*,
-	count(island_id) over(partition by island_id order by login_date rows between unbounded preceding and unbounded following)
-from island_id
-order by login_date, island_head
-```
-
-To make the result set more compact:
-
-```sql
-with rep as (
-	select
-		*,
-		case
-			when lag(user_name) over(order by login_date) = user_name then 1
-			else 0
-		end as rep
-	from login_details
-), island_head as (
-	select
-		*,
-		case
-			when
-				rep = 0 and lead(rep) over(order by login_date) = 1 then login_id
-		end as island_head
-	from rep
-), island_id as(
-	select
-		*,
-		case
-			when rep = 1 then max(island_head) over(order by login_date)
-			when rep = 0 then island_head
-		end as island_id
-	from island_head
-), island as(
-	select
-		*,
-		count(island_id) over(partition by island_id order by login_date rows between unbounded preceding and unbounded following) as consecutive_logins
-	from island_id
-)
-
-select  island_id, consecutive_logins, user_name
-from island
-where consecutive_logins != 0
-group by island_id, consecutive_logins, user_name
-order by island_id
+SELECT DISTINCT repeated_names
+FROM (
+SELECT *,
+CASE
+	WHEN user_name = LEAD(user_name) OVER(ORDER BY login_id)
+AND user_name = LEAD(user_name, 2) OVER(ORDER BY login_id)
+THEN user_name ELSE null END AS repeated_names
+FROM login_details) x
+WHERE x.repeated_names IS NOT null;
 ```
 
 ## 18.6. Exercise 6
@@ -3838,13 +3518,11 @@ insert into students values
 Solution:
 
 ```sql
-select
-	*,
-	case
-		when id % 2 = 1 then lead(student_name,1,student_name) over()
-		when id % 2 = 0 then lag(student_name,1,student_name) over()
-	end as new_student_name
-from students
+SELECT id,student_name,
+CASE
+WHEN id%2 <> 0 then lead(student_name,1,student_name) OVER(ORDER BY id)
+WHEN id%2 = 0 then lag(student_name) over(order by id) END AS new_student_name
+FROM students;
 ```
 
 ## 18.7. Exercise 7
